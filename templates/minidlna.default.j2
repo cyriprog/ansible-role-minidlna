@@ -15,8 +15,8 @@ START_DAEMON="yes"
 #LOGFILE="/var/log/minidlna.log"
 
 # User and group the daemon should run as
-USER="{{ minidlna.user }}"
-GROUP="{{ minidlna.group }}"
+USER="{{ minidlna.user | default('minidlna') }}"
+GROUP="{{ minidlna.group | default('minidlna') }}"
 
 # Additional options that are passed to the daemon
 DAEMON_OPTS=""

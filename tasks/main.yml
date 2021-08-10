@@ -6,10 +6,10 @@
 
 - name: Ensure that configured cache dir exists
   file:
-    path: "{{ minidlna.db_dir }}"
+    path: "{{ minidlna.db_dir | default('var/cache/minidlna') }}"
     state: directory
-    owner: "{{ minidlna.user }}"
-    group: "{{ minidlna.group }}"
+    owner: "{{ minidlna.user | default('minidlna') }}"
+    group: "{{ minidlna.group | default('minidlna') }}"
     mode: 0755
 
 - name: Copy miniDLNA configuration in place.

@@ -7,10 +7,7 @@
 # documentation about this file.
 
 # Specify the user name or uid to run as.
-{% if minidlna.user is defined %}
-user={{ minidlna.user }}
-{% endif %}
-
+user={{ minidlna.user | default('minidlna') }}
 
 # Path to the directory you want scanned for media files.
 #
@@ -30,10 +27,16 @@ media_dir={{ dir }}
 {% endif %}
 
 # Path to the directory that should hold the database and album art cache.
+#db_dir=/var/cache/minidlna
+{% if minidlna.db_dir is defined %}
 db_dir={{ minidlna.db_dir }}
+{% endif %}
 
 # Path to the directory that should hold the log file.
 #log_dir=/var/log
+{% if minidlna.log_dir is defined %}
+log_dir={{ minidlna.log_dir }}
+{% endif %}
 
 # Type and minimum level of importance of messages to be logged.
 #
@@ -50,6 +53,55 @@ db_dir={{ minidlna.db_dir }}
 #
 # The default is to log all types of messages at the "warn" level.
 #log_level=general,artwork,database,inotify,scanner,metadata,http,ssdp,tivo=warn
+{% if minidlna.log_levels is defined %}
+{% set log_level_result = "" %}
+{% if minidlna.log_levels.general is defined %}
+{% set log_level_result = "general=" ~ minidlna.log_levels.general %}
+{% else %}
+{% set log_level_result = "general=warn" %}
+{% endif %}
+{% if minidlna.log_levels.artwork is defined %}
+{% set log_level_result = log_level_result ~ ",artwork=" ~ minidlna.log_levels.artwork %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",artwork=warn" %}
+{% endif %}
+{% if minidlna.log_levels.database is defined %}
+{% set log_level_result = log_level_result ~ ",database=" ~ minidlna.log_levels.database %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",database=warn" %}
+{% endif %}
+{% if minidlna.log_levels.inotify is defined %}
+{% set log_level_result = log_level_result ~ ",inotify=" ~ minidlna.log_levels.inotify %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",inotify=warn" %}
+{% endif %}
+{% if minidlna.log_levels.scanner is defined %}
+{% set log_level_result = log_level_result ~ ",scanner=" ~ minidlna.log_levels.scanner %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",scanner=warn" %}
+{% endif %}
+{% if minidlna.log_levels.metadata is defined %}
+{% set log_level_result = log_level_result ~ ",metadata=" ~ minidlna.log_levels.metadata %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",metadata=warn" %}
+{% endif %}
+{% if minidlna.log_levels.http is defined %}
+{% set log_level_result = log_level_result ~ ",http=" ~ minidlna.log_levels.http %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",http=warn" %}
+{% endif %}
+{% if minidlna.log_levels.ssdp is defined %}
+{% set log_level_result = log_level_result ~ ",ssdp=" ~ minidlna.log_levels.ssdp %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",ssdp=warn" %}
+{% endif %}
+{% if minidlna.log_levels.tivo is defined %}
+{% set log_level_result = log_level_result ~ ",tivo=" ~ minidlna.log_levels.tivo %}
+{% else %}
+{% set log_level_result = log_level_result ~ ",tivo=warn" %}
+{% endif %}
+log_level={{ log_level_result }}
+{% endif %}
 
 # Use a different container as the root of the directory tree presented to
 # clients. The possible values are:
@@ -61,6 +113,9 @@ db_dir={{ minidlna.db_dir }}
 # If you specify "B" and the client device is audio-only then "Music/Folders"
 # will be used as root.
 #root_container=.
+{% if minidlna.root_container is defined %}
+root_container={{ minidlna.root_container }}
+{% endif %}
 
 # Network interface(s) to bind to (e.g. eth0), comma delimited.
 # This option can be specified more than once.
@@ -93,6 +148,9 @@ port={{ minidlna.port | default(9200) }}
 
 # URL presented to clients (e.g. http://example.com:80).
 #presentation_url=/
+{% if minidlna.presentation is defined %}
+presentation_url={{ minidlna.presentation }}
+{% endif %}
 
 # Name that the DLNA server presents to clients.
 # Defaults to "hostname: username".
@@ -103,6 +161,9 @@ friendly_name={{ minidlna.friendly_name }}
 # Serial number the server reports to clients.
 # Defaults to 00000000.
 #serial=00000000
+{% if minidlna.serial is defined %}
+serial={{ minidlna.serial }}
+{% endif %}
 
 # Model name the server reports to clients.
 #model_name=Windows Media Connect compatible (MiniDLNA)
@@ -113,27 +174,51 @@ model_name={{ minidlna.model_name }}
 # Model number the server reports to clients.
 # Defaults to the version number of minidlna.
 #model_number=
+{% if minidlna.model_number is defined %}
+model_number={{ minidlna.model_number }}
+{% endif %}
 
 # Automatic discovery of new files in the media_dir directory.
 #inotify=yes
+{% if minidlna.inotify is defined %}
+inotify={{ 'yes' if minidlna.inotify else 'no' }}
+{% endif %}
 
 # List of file names to look for when searching for album art.
 # Names should be delimited with a forward slash ("/").
 # This option can be specified more than once.
+{% if minidlna.album_art_names is defined and minidlna.album_art_names %}
+{% for album_art_names in minidlna.album_art_names %}
+album_art_names={{ album_art_names }}
+{% endfor %}
+{% else %}
 album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg
 album_art_names=AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg
 album_art_names=Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg
+{% endif %}
 
 # Strictly adhere to DLNA standards.
 # This allows server-side downscaling of very large JPEG images, which may
 # decrease JPEG serving performance on (at least) Sony DLNA products.
 #strict_dlna=no
+{% if minidlna.strict_dlna is defined %}
+strict_dlna={{  'yes' if minidlna.strict_dlna else 'no' }}
+{% endif %}
 
 # Support for streaming .jpg and .mp3 files to a TiVo supporting HMO.
 #enable_tivo=no
+{% if minidlna.enable_tivo is defined %}
+enable_tivo={{ 'yes' if minidlna.enable_tivo else 'no' }}
+{% endif %}
 
 # Notify interval, in seconds.
 #notify_interval=895
+{% if minidlna.notify_interval is defined %}
+notify_interval={{ minidlna.notify_interval }}
+{% endif %}
 
 # Path to the MiniSSDPd socket, for MiniSSDPd support.
 #minissdpdsocket=/run/minissdpd.sock
+{% if minidlna.minissdpdsocket is defined %}
+minissdpdsocket={{ minidlna.minissdpdsocket }}
+{% endif %}
