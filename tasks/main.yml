@@ -28,8 +28,13 @@
     group: root
     mode: 0644
 
-- name: Ensure miniDLNA is restarted and enabled to start at boot.
+- name: Ensure miniDLNA is enabled to start at boot.
+  service:
+    name: minidlna
+    enabled: yes
+
+- name: Ensure miniDLNA is restarted.
   service:
     name: minidlna
     state: restarted
-    enabled: yes
+  failed_when: not (minidlna_ignore_restart_error | bool | default(no))
