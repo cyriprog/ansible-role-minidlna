@@ -8,3 +8,9 @@ minidlna:
     - /var/lib/minidlna
 
 minidlna_ignore_restart_error: no
+
+#state : possibles values :
+# - autostart installed and startservice activate
+# - present : installed but service desactivate
+# - absent : desinstalled
+state: present

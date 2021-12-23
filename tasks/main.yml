@@ -1,40 +1,93 @@
 ---
+
+- block:
+  - set_fact:
+      minidlna_state_state: "{{ state if state is defined and state in ('present', 'autostart', 'absent') else 'present' }}"
+  - set_fact: 
+      minidlna_state_exec: "{{ 'present' if minidlna_state_state in ('present', 'autostart') else 'absent' }}"
+      minidlna_state_file: "{{ minidlna_state_state == 'present' or minidlna_state_state == 'autostart' }}"
+  no_log: true
+
+
+- name: Update fs.inotify.max_user_watches
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: "{{ max_user_watches }}"
+    state: present
+  when:
+    - minidlna_state_file
+    - max_user_watches is defined
+
 - name: Install miniDNLA
   apt:
     name: minidlna
-    state: present
+    state: "{{ minidlna_state_exec }}"
 
-- name: Ensure that configured cache dir exists
+- name: Create configuration
+  block:
+  - name: Ensure that configured cache dir exists
+    file:
+      path: "{{ minidlna.db_dir | default('var/cache/minidlna') }}"
+      state: directory
+      owner: "{{ minidlna.user | default('minidlna') }}"
+      group: "{{ minidlna.group | default('minidlna') }}"
+      mode: 0755
+
+  - name: Copy miniDLNA configuration in place.
+    template:
+      src: minidlna.conf.j2
+      dest: /etc/minidlna.conf
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Copy default configuration
+    template:
+      src: minidlna.default.j2
+      dest: /etc/default/minidlna
+      owner: root
+      group: root
+      mode: 0644
+  when: minidlna_state_file
+
+- name: Configure minidlna service for absent
+  systemd:
+    name: minidlna
+    enabled: no
+    state: stopped
+    masked: yes
+  when: minidlna_state_state == 'absent'
+
+- name: Delete configuration
   file:
-    path: "{{ minidlna.db_dir | default('var/cache/minidlna') }}"
-    state: directory
-    owner: "{{ minidlna.user | default('minidlna') }}"
-    group: "{{ minidlna.group | default('minidlna') }}"
-    mode: 0755
+    name: "{{ item }}"
+  with_items:
+    - "{{ minidlna.db_dir | default('var/cache/minidlna') }}"
+    - /etc/minidlna.conf
+    - /etc/default/minidlna
+  when: not minidlna_state_file
 
-- name: Copy miniDLNA configuration in place.
-  template:
-    src: minidlna.conf.j2
-    dest: /etc/minidlna.conf
-    owner: root
-    group: root
-    mode: 0644
+- name: Configure minidlna service for autostart
+  block:
+  - name: Ensure miniDLNA is enabled to start at boot.
+    systemd:
+      name: minidlna
+      enabled: yes
+      masked: no
 
-- name: Copy default configuration
-  template:
-    src: minidlna.default.j2
-    dest: /etc/default/minidlna
-    owner: root
-    group: root
-    mode: 0644
+  # In two step because restarted may cause ignorable error.
+  - name: Ensure miniDLNA is restarted.
+    service:
+      name: minidlna
+      state: restarted
+    failed_when: not (minidlna_ignore_restart_error | bool | default(no))
+  when: minidlna_state_state == 'autostart'
 
-- name: Ensure miniDLNA is enabled to start at boot.
+- name: Configure minidlna service for present
   service:
     name: minidlna
-    enabled: yes
+    enabled: no
+    state: stopped
+  when: minidlna_state_state == 'present'
 
-- name: Ensure miniDLNA is restarted.
-  service:
-    name: minidlna
-    state: restarted
-  failed_when: not (minidlna_ignore_restart_error | bool | default(no))
+   
