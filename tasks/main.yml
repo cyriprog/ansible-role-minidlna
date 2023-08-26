@@ -6,9 +6,7 @@
   - set_fact: 
       minidlna_state_exec: "{{ 'present' if minidlna_state_state in ('present', 'autostart') else 'absent' }}"
       minidlna_state_file: "{{ minidlna_state_state == 'present' or minidlna_state_state == 'autostart' }}"
-  no_log: true
-
-
+  
 - name: Update fs.inotify.max_user_watches
   ansible.posix.sysctl:
     name: fs.inotify.max_user_watches
